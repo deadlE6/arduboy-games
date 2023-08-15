@@ -1,0 +1,189 @@
+//deadlie 
+//november 24 2022
+//a simple pong clone
+
+#include <Arduboy2.h>
+Arduboy2 arduboy;
+
+//variables go here
+int gamestate = 0;
+int ballx = 62;
+int bally = 0;
+int ballsize = 4;
+int ballright = 1;
+int balldown = 1;
+int paddlewidth = 4;
+int paddleheight = 9;
+int playerx = 0;
+int playery = 31;
+int computerY = 31;
+int computerX = 127 - paddlewidth;
+int playerscore = 0;
+int computerscore = 0;
+int computerReactionTime = 75;
+int computerRandom = 3;
+int difficulty = 1;
+
+void resetGame() {
+  ballx = 63;
+  playerscore = 0;
+  computerscore = 0;
+}
+
+void setup() {
+  arduboy.begin();
+  arduboy.initRandomSeed();
+  arduboy.setFrameRate(50);
+  //set up here
+  arduboy.clear();
+
+}
+
+void loop() {
+  if (!arduboy.nextFrame()) {
+    return;
+  }
+  arduboy.clear();
+  arduboy.pollButtons();
+  // game code goes here
+  switch (gamestate) {
+    case 0:
+    //title screen
+    arduboy.setCursor(41, 2);
+    arduboy.print("PONG GAME");
+    arduboy.setCursor(36, 35);
+    arduboy.print("difficulty:");
+    //case zero
+    if (arduboy.justPressed(B_BUTTON)) {
+      difficulty += 1;
+      if (difficulty > 3) {
+        difficulty = 1;
+      }
+    }
+    if (difficulty == 1) {
+      computerReactionTime = 110;
+      computerRandom = 10;
+      arduboy.setCursor(41, 50);
+      arduboy.print("Baby Mode");
+    }
+    if (difficulty == 2) {
+      computerReactionTime = 100;
+      computerRandom = 7;
+      arduboy.setCursor(41, 50);
+      arduboy.print("Mediocre");
+    }
+    if(difficulty == 3) {
+      computerReactionTime = 75;
+      computerRandom = 3;
+      arduboy.setCursor(41, 50);
+      arduboy.print("DAMN!");
+    }
+    if (arduboy.justPressed(A_BUTTON)) {
+      gamestate = 1;
+    }
+    break;
+
+    case 1:
+    //gameplay screen
+    arduboy.setCursor(20, 0);
+    arduboy.print(playerscore);
+    if (arduboy.justPressed(A_BUTTON)) {
+      gamestate = 4;
+    }
+    arduboy.setCursor(101, 0);
+    arduboy.print(computerscore);
+    //enemy
+    
+    arduboy.fillRect(computerX, computerY, paddlewidth, paddleheight, WHITE);
+    if (ballx > computerReactionTime || random(1, computerRandom) == 1) {
+      if (bally < computerY) {
+        computerY = computerY - 1;
+      }
+      if (bally + ballsize > computerY + paddleheight) {
+        computerY = computerY + 1;
+      }
+    }
+    arduboy.fillRect(playerx, playery, paddlewidth, paddleheight, WHITE);
+    if (arduboy.pressed(UP_BUTTON) && playery > 0) {
+      playery = playery - 1;
+    }
+    if (arduboy.pressed(DOWN_BUTTON) && playery + paddleheight< 63) {
+      playery = playery + 1;
+    }
+    arduboy.fillRect(ballx, bally, ballsize, ballsize, WHITE);
+    if (ballright == 1) {
+      ballx = ballx + 1;
+    }
+    if (ballright == -1) {
+      ballx = ballx - 1;
+    }
+    if (balldown == 1) {
+     bally = bally + 1;
+    }
+    if (balldown == -1) {
+     bally = bally - 1;
+    }
+    if (bally == 0) {
+      balldown = 1;
+    }
+    if (bally + ballsize == 63) {
+      balldown = -1;
+    }
+    if (playerscore == 5) {
+      gamestate = 2;
+    }
+    if (computerscore == 5) {
+      gamestate = 3;
+    }
+    if (ballx < -10) {
+      ballx = 63;
+      computerscore = computerscore + 1;
+    }
+    if (ballx > 130) {
+      ballx = 63;
+      playerscore = playerscore + 1;
+    }
+    if (ballx == playerx + paddlewidth && playery < bally + ballsize && playery + paddleheight > bally) {
+      ballright = 1;
+    }
+    if (ballx + ballsize == computerX && computerY < bally + ballsize && computerY + paddleheight > bally  ) {
+      ballright = -1;
+    }
+    break;
+
+    case 2:
+    //win screen
+    arduboy.setCursor(1, 21);
+    arduboy.print("WOW. You Won! damn ");
+    arduboy.setCursor(1, 31);
+    arduboy.print("that is crazy");
+    if (arduboy.justPressed(A_BUTTON)) {
+      gamestate = 0;
+      resetGame();      
+    }
+  
+    break;
+
+    case 3:
+    //lose screen
+    arduboy.setCursor(41, 31);
+    arduboy.print("you lost!");
+    if (arduboy.justPressed(A_BUTTON)) {
+      gamestate = 0;
+      resetGame();
+    }
+    break;
+
+    case 4:
+    arduboy.setCursor(36, 35);
+    arduboy.print("paused :)");
+    if (arduboy.justPressed(A_BUTTON)) {
+      gamestate = 1;
+    }
+    if (arduboy.justPressed(B_BUTTON)) {
+      gamestate = 0;
+      resetGame();
+    }
+  }
+  arduboy.display();
+}
